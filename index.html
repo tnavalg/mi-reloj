@@ -43,6 +43,10 @@
   <div id="modo">Modo: ⏱ Sumar tiempo (juego sin pantalla)</div>
   <button onclick="cambiarDireccion()">↔️ Cambiar Modo</button>
   <button onclick="resetearTiempo()">🔄 Reset</button>
+  <button onclick="document.getElementById('alarma').play()">🔊 Probar Sonido</button>
+
+  <!-- Audio -->
+  <audio id="alarma" src="beep.mp3" preload="auto"></audio>
 
   <script>
     let segundos = 0;
@@ -50,7 +54,12 @@
 
     function actualizarReloj() {
       segundos += sentido;
-      if (segundos < 0) segundos = 0;
+      if (segundos < 0) {
+        segundos = 0;
+        if (sentido === -1) {
+          document.getElementById("alarma").play();
+        }
+      }
       document.getElementById("tiempo").textContent = formatearTiempo(segundos);
     }
 
