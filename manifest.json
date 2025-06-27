@@ -1,1 +1,0 @@
-{"name": "Mi Tiempo", "short_name": "Tiempo", "start_url": ".", "display": "standalone", "background_color": "#f8b500", "theme_color": "#ffda44", "icons": [{"src": "icon.png", "sizes": "192x192", "type": "image/png"}, {"src": "icon.png", "sizes": "512x512", "type": "image/png"}]}
