@@ -3,33 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Reloj de Actividad (Servidor)</title>
+  <title>Mi Reloj</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <style>
-    body { font-family: 'Comic Sans MS', cursive; text-align: center; padding: 2em; background: #fceabb; }
-    h1 { font-size: 4em; margin: 0.5em; }
-    #modo, #acumulados { font-size: 1.2em; margin: 1em; }
-    button { font-size: 1.2em; margin: 0.3em; padding: 0.5em 1em; }
-    #controles { display: none; }
+    :root {
+      --primary-color: #6a11cb; /* Morado */
+      --secondary-color: #2575fc; /* Azul */
+      --accent-color: #ffda44; /* Amarillo vibrante */
+      --background-light: #f0f2f5; /* Gris claro */
+      --text-dark: #333;
+      --text-light: #fff;
+      --green-status: #4CAF50;
+      --red-status: #f44336;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      text-align: center;
+      padding: 2em;
+      background: linear-gradient(to right, var(--background-light), #e0e6ed);
+      color: var(--text-dark);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: var(--text-light);
+      padding: 2em;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      max-width: 90%;
+      width: 500px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      font-size: 5em;
+      margin: 0.2em 0;
+      color: var(--primary-color);
+      letter-spacing: -2px;
+      font-weight: 700;
+    }
+
+    #modo, #acumulados {
+      font-size: 1.3em;
+      margin: 0.8em 0;
+      font-weight: 400;
+    }
+
+    #acumulados {
+      color: #666;
+    }
+
+    #pinForm {
+      margin-top: 1.5em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #pinInput {
+      padding: 0.8em;
+      margin-bottom: 1em;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1.1em;
+      text-align: center;
+      width: 80%;
+      max-width: 250px;
+    }
+
+    button {
+      font-size: 1.1em;
+      padding: 0.8em 1.5em;
+      margin: 0.4em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: var(--text-light);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    button[onclick="verificarPIN()"] { background: var(--secondary-color); }
+    button[onclick="verificarPIN()"]:hover { background: #1e67e2; }
+
+    button[onclick="iniciarDesdeCero()"] { background: var(--green-status); }
+    button[onclick="iniciarDesdeCero()"]:hover { background: #409b44; }
+
+    button[onclick="cambiarModo()"] { background: var(--primary-color); }
+    button[onclick="cambiarModo()"]:hover { background: #5a0ebf; }
+
+    button[onclick="alternarActivo()"] { background: #ff9800; } /* Naranja para Pausar/Reanudar */
+    button[onclick="alternarActivo()"]:hover { background: #e68900; }
+
+    button[onclick="generarReporte()"] { background: #03a9f4; } /* Azul claro para Reporte */
+    button[onclick="generarReporte()"]:hover { background: #0288d1; }
+
+    #controles {
+      margin-top: 1.5em;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px; /* Espacio entre botones */
+    }
+
+    #reporte-semanal {
+      margin-top: 3em;
+      padding: 1.5em;
+      background: #f0f8ff; /* Fondo muy claro para el reporte */
+      border-radius: 10px;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+      text-align: left;
+      font-size: 0.95em;
+      max-width: 90%;
+      width: 500px;
+      box-sizing: border-box;
+    }
+
+    #reporte-semanal h2 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 1em;
+      font-size: 1.6em;
+      font-weight: 700;
+    }
+
+    .reporte-dia {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6em 0;
+      border-bottom: 1px dashed #e0e0e0;
+    }
+    .reporte-dia:last-child {
+      border-bottom: none;
+    }
+    .reporte-dia span {
+      flex: 1;
+      padding: 0 5px;
+    }
+    .reporte-dia .tiempo {
+      text-align: right;
+      font-weight: bold;
+    }
+
+    /* Iconos de estado para acumulados */
+    .icon-green { color: var(--green-status); }
+    .icon-red { color: var(--red-status); }
   </style>
 </head>
 <body>
-  <h1 id="tiempo">00:00:00</h1>
-  <div id="modo">Modo: ⏱ Juego sin pantalla</div>
-  <div id="acumulados"></div>
-  <div id="pinForm">
-    <input type="password" id="pinInput" placeholder="PIN">
-    <button onclick="verificarPIN()">🔓 Desbloquear</button>
+  <div class="container">
+    <h1 id="tiempo">00:00:00</h1>
+    <div id="modo">Modo: ⏱ Juego sin pantalla</div>
+    <div id="acumulados"></div>
+
+    <div id="pinForm">
+      <input type="password" id="pinInput" placeholder="PIN">
+      <button onclick="verificarPIN()">🔓 Desbloquear</button>
+    </div>
+
+    <div id="controles">
+      <button onclick="iniciarDesdeCero()">🚀 Iniciar / Restablecer</button>
+      <button onclick="cambiarModo()">↔️ Cambiar Modo</button>
+      <button onclick="alternarActivo()">⏸️ Pausar / ▶️ Reanudar</button>
+      <button onclick="generarReporte()">📊 Ver Reporte Semanal</button> </div>
   </div>
-  <div id="controles">
-    <button onclick="reiniciar()">🆕 Reiniciar</button>
-    <button onclick="iniciar()">▶️ Iniciar</button>
-    <button onclick="pausar()">⏸ Pausar</button>
-    <button onclick="cambiarModo()">↔️ Cambiar Modo</button>
+
+  <div id="reporte-semanal" style="display: none;">
+    <h2>Reporte de Uso (Últimos 7 Días)</h2>
+    <div id="reporte-contenido">
+      Cargando reporte...
+    </div>
   </div>
+
   <audio id="alarma" src="beep.mp3" preload="auto"></audio>
 
 <script>
@@ -46,9 +213,10 @@
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
-  const ref = db.ref("reloj");
+  const ref = db.ref("reloj"); // Nodo principal para el estado del reloj
 
   function formatear(s) {
+    if (s < 0) s = 0; // Asegurarse de que el tiempo no sea negativo
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
     const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
     const sec = String(s % 60).padStart(2, '0');
@@ -58,79 +226,180 @@
   function verificarPIN() {
     const ingresado = document.getElementById("pinInput").value;
     if (ingresado === PIN) {
-      document.getElementById("controles").style.display = "block";
+      document.getElementById("controles").style.display = "flex"; // Usar flex para los botones
       document.getElementById("pinForm").style.display = "none";
     } else {
       alert("PIN incorrecto");
     }
   }
 
-  function reiniciar() {
-    ref.set({ 
-      base: 0,
-      tiempoJuego: 0,
-      tiempoPantalla: 0,
-      modo: 1,
-      activo: false,
-      ultimaActualizacion: Date.now()
+  function iniciarDesdeCero() {
+    ref.set({
+      valorVisible: 0,
+      modo: 1, // Inicia en modo "Juego sin pantalla"
+      activo: true, // Inicia activo
+      // Contadores diarios
+      tiempoJuegoHoy: 0,
+      tiempoPantallaHoy: 0,
+      ultimaFechaRegistro: new Date().toISOString().slice(0, 10) // Fecha de hoy
     });
-  }
-
-  function iniciar() {
-    ref.update({ activo: true, ultimaActualizacion: Date.now() });
-  }
-
-  function pausar() {
-    ref.get().then(snap => {
-      const data = snap.val();
-      if (!data.activo) return;
-      const ahora = Date.now();
-      const delta = Math.floor((ahora - data.ultimaActualizacion) / 1000);
-      const incremento = data.modo === 1 ? delta : -delta;
-      let nuevoValor = data.base + incremento;
-      if (nuevoValor < 0) {
-        nuevoValor = 0;
-        document.getElementById("alarma").play();
-      }
-      const tiempoJuego = data.modo === 1 ? data.tiempoJuego + delta : data.tiempoJuego;
-      const tiempoPantalla = data.modo === -1 ? data.tiempoPantalla + delta : data.tiempoPantalla;
-
-      ref.update({
-        base: nuevoValor,
-        tiempoJuego,
-        tiempoPantalla,
-        activo: false
-      });
-    });
+    // Ocultar reporte si está visible al reiniciar
+    document.getElementById("reporte-semanal").style.display = "none";
   }
 
   function cambiarModo() {
     ref.get().then(snap => {
       const data = snap.val();
+      if (!data) return;
       const nuevoModo = data.modo * -1;
-      ref.update({ modo: nuevoModo, ultimaActualizacion: Date.now() });
+      ref.update({ modo: nuevoModo });
     });
   }
 
-  setInterval(() => {
+  function alternarActivo() {
     ref.get().then(snap => {
       const data = snap.val();
       if (!data) return;
-      let valor = data.base;
-      if (data.activo) {
-        const delta = Math.floor((Date.now() - data.ultimaActualizacion) / 1000);
-        valor += data.modo * delta;
-        if (valor < 0) valor = 0;
-      }
-      document.getElementById("tiempo").textContent = formatear(valor);
-      document.getElementById("modo").textContent = data.modo === 1 ? "Modo: ⏱ Juego sin pantalla" : "Modo: 📱 Uso de pantalla";
-      document.getElementById("acumulados").textContent =
-        `🟢 Juego: ${formatear(data.tiempoJuego)} | 🔴 Pantalla: ${formatear(data.tiempoPantalla)}`;
+      const nuevoActivo = !data.activo;
+      ref.update({ activo: nuevoActivo });
     });
-  }, 1000);
+  }
 
+  // --- Lógica de Actualización y Registro Diario ---
+  setInterval(() => {
+    ref.get().then(snap => {
+      const data = snap.val();
+      if (!data || !data.activo) return; // Si no hay datos o 'activo' es false, no actualizamos
+
+      // Actualizar valorVisible
+      let nuevoValor = data.valorVisible + data.modo;
+      if (nuevoValor < 0) {
+        nuevoValor = 0;
+        document.getElementById("alarma").play();
+      }
+
+      // Actualizar contadores diarios (tiempoJuegoHoy, tiempoPantallaHoy)
+      let tiempoJuegoHoy = data.tiempoJuegoHoy || 0;
+      let tiempoPantallaHoy = data.tiempoPantallaHoy || 0;
+
+      if (data.modo === 1) { // Modo Juego sin pantalla
+        tiempoJuegoHoy++;
+      } else { // Modo Uso de pantalla
+        tiempoPantallaHoy++;
+      }
+
+      ref.update({
+        valorVisible: nuevoValor,
+        tiempoJuegoHoy: tiempoJuegoHoy,
+        tiempoPantallaHoy: tiempoPantallaHoy
+      });
+    });
+  }, 1000); // Se ejecuta cada segundo
+
+  // --- Lógica para guardar datos diarios y actualizar UI ---
+  ref.on("value", snap => {
+    const data = snap.val();
+    if (!data) {
+      // Si no hay datos iniciales, mostramos valores por defecto
+      document.getElementById("tiempo").textContent = "00:00:00";
+      document.getElementById("modo").textContent = "Modo: ⏱ Juego sin pantalla";
+      document.getElementById("acumulados").textContent = "🟢 Juego Hoy: 00:00:00 | 🔴 Pantalla Hoy: 00:00:00";
+      return;
+    }
+
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().slice(0, 10); // Formato "YYYY-MM-DD"
+
+    // Comprobar si el día ha cambiado
+    if (data.ultimaFechaRegistro && fechaHoy !== data.ultimaFechaRegistro) {
+      const fechaAnterior = data.ultimaFechaRegistro;
+      const tiempoJuegoGuardar = data.tiempoJuegoHoy || 0;
+      const tiempoPantallaGuardar = data.tiempoPantallaHoy || 0;
+
+      // Guardar los datos del día anterior en registrosDiarios
+      db.ref(`reloj/registrosDiarios/${fechaAnterior}`).set({
+        juegoSinPantalla: tiempoJuegoGuardar,
+        usoDePantalla: tiempoPantallaGuardar
+      }).then(() => {
+        console.log(`Registros diarios guardados para ${fechaAnterior}`);
+        // Reiniciar contadores diarios y actualizar la fecha de registro para el nuevo día
+        ref.update({
+          tiempoJuegoHoy: 0,
+          tiempoPantallaHoy: 0,
+          ultimaFechaRegistro: fechaHoy
+        });
+      }).catch(error => {
+        console.error("Error al guardar registros diarios:", error);
+      });
+    } else if (!data.ultimaFechaRegistro) {
+        // Inicializar ultimaFechaRegistro si no existe
+        ref.update({ ultimaFechaRegistro: fechaHoy });
+    }
+
+    // Actualizar la interfaz de usuario principal
+    document.getElementById("tiempo").textContent = formatear(data.valorVisible);
+    document.getElementById("modo").textContent = data.modo === 1 ? "Modo: ⏱ Juego sin pantalla" : "Modo: 📱 Uso de pantalla";
+    const estadoActivo = data.activo ? "Activo" : "Pausado";
+    document.getElementById("acumulados").innerHTML =
+      `🟢 Juego Hoy: ${formatear(data.tiempoJuegoHoy || 0)} | 🔴 Pantalla Hoy: ${formatear(data.tiempoPantallaHoy || 0)} <br> Estado: ${estadoActivo}`;
+  });
+
+  // --- Lógica del Reporte Semanal ---
+  function generarReporte() {
+    const reporteDiv = document.getElementById("reporte-semanal");
+    const reporteContenido = document.getElementById("reporte-contenido");
+    reporteContenido.innerHTML = "Cargando reporte...";
+    reporteDiv.style.display = "block"; // Mostrar el div del reporte
+
+    const hoy = new Date();
+    const fechas = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(hoy);
+      d.setDate(hoy.getDate() - i);
+      fechas.push(d.toISOString().slice(0, 10)); // "YYYY-MM-DD"
+    }
+    fechas.reverse(); // Para que el reporte muestre del día más antiguo al más reciente
+
+    const promesasReporte = fechas.map(fecha => {
+      return db.ref(`reloj/registrosDiarios/${fecha}`).get().then(snap => {
+        const data = snap.val();
+        return {
+          fecha: fecha,
+          juegoSinPantalla: data ? (data.juegoSinPantalla || 0) : 0,
+          usoDePantalla: data ? (data.usoDePantalla || 0) : 0
+        };
+      }).catch(error => {
+        console.error(`Error al obtener datos para ${fecha}:`, error);
+        return { fecha: fecha, juegoSinPantalla: 0, usoDePantalla: 0 }; // Devuelve cero si hay error
+      });
+    });
+
+    Promise.all(promesasReporte).then(resultados => {
+      let htmlReporte = '';
+      resultados.forEach(dia => {
+        const fechaFormateada = new Date(dia.fecha + 'T00:00:00').toLocaleDateString('es-AR', {
+          weekday: 'short', month: 'numeric', day: 'numeric'
+        });
+        htmlReporte += `
+          <div class="reporte-dia">
+            <span>${fechaFormateada}</span>
+            <span>🟢 ${formatear(dia.juegoSinPantalla)}</span>
+            <span>🔴 ${formatear(dia.usoDePantalla)}</span>
+          </div>
+        `;
+      });
+      reporteContenido.innerHTML = htmlReporte;
+    }).catch(error => {
+      console.error("Error al generar el reporte completo:", error);
+      reporteContenido.innerHTML = "No se pudo cargar el reporte.";
+    });
+  }
+
+  // --- Registro del Service Worker ---
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Service Worker registrado con éxito:', reg))
+      .catch(err => console.error('Error al registrar el Service Worker:', err));
   }
 </script>
 </body>
